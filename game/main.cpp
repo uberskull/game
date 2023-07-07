@@ -2,16 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "SDL.h"
-#include "SDL_opengl.h"
-
-/*
-typedef int32_t i32;
-typedef uint32_t u32;
-typedef int32_t b32;
-
-#define WinWidth 1000
-#define WinHeight 1000
-*/
+#include "glad.h"
 
 int main(int argc, char* argv[])
 {
@@ -36,6 +27,27 @@ int main(int argc, char* argv[])
     SDL_Window *window = SDL_CreateWindow("game", 0, 0, mode.w, mode.h, 
         SDL_WINDOW_FULLSCREEN|SDL_WINDOW_OPENGL);
     SDL_GL_CreateContext(window);
+    gladLoadGL();
+
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
+    // An array of 3 vectors which represents 3 vertices
+    static const GLfloat g_vertex_buffer_data[] = {
+       -1.0f, -1.0f, 0.0f,
+       1.0f, -1.0f, 0.0f,
+       0.0f,  1.0f, 0.0f,
+    };
+
+    // This will identify our vertex buffer
+    GLuint vertexbuffer;
+    // Generate 1 buffer, put the resulting identifier in vertexbuffer
+    glGenBuffers(1, &vertexbuffer);
+    // The following commands will talk about our 'vertexbuffer' buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    // Give our vertices to OpenGL.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
     while (running == true)
     {
@@ -56,9 +68,25 @@ int main(int argc, char* argv[])
                 running = false;
             }
         }
+        // 1st attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+            0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+        );
+        // Draw the triangle !
+        glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+        glDisableVertexAttribArray(0);
+        /*
         glViewport(0, 0, mode.w, mode.h);
         glClearColor(1.f, 0.f, 1.f, 0.f);
         glClear(GL_COLOR_BUFFER_BIT);
+        */
         SDL_GL_SwapWindow(window);
     }
 
