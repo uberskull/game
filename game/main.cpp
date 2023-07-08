@@ -1,8 +1,8 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include "SDL.h"
-#include "glad.h"
+#include <SDL.h>
+#include <glad/glad.h>
 
 int main(int argc, char* argv[])
 {
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
         printf("Video initialization failed: %s\n", SDL_GetError());
         return 1;
     }
- 
+    //Get default resolution
     int number = SDL_GetNumDisplayModes(0);
     for (int i = 0; i < number; i++)
     {
@@ -24,11 +24,12 @@ int main(int argc, char* argv[])
     }
     printf("Values: %d", mode.w);
     printf(" %d\n", mode.h);
+
     SDL_Window *window = SDL_CreateWindow("game", 0, 0, mode.w, mode.h, 
         SDL_WINDOW_FULLSCREEN|SDL_WINDOW_OPENGL);
     SDL_GL_CreateContext(window);
     gladLoadGL();
-
+    //Open gl code start here
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -49,21 +50,21 @@ int main(int argc, char* argv[])
     // Give our vertices to OpenGL.
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
+    SDL_Event event;
     while (running == true)
     {
-        SDL_Event Event;
-        while (SDL_PollEvent(&Event))
+        while (SDL_PollEvent(&event))
         {
-            if (Event.type == SDL_KEYDOWN)
+            if (event.type == SDL_KEYDOWN)
             {
-                switch(Event.key.keysym.sym)
+                switch(event.key.keysym.sym)
                 {
                     case SDLK_ESCAPE:
                         running = false;
                     break;
                 }
             }
-            if (Event.type == SDL_QUIT)
+            if (event.type == SDL_QUIT)
             {
                 running = false;
             }
