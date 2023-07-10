@@ -3,6 +3,36 @@
 #include <cstdlib>
 #include <SDL.h>
 #include <glad/glad.h>
+/*
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+*/
+
+// Shader sources
+const GLchar* vertexSource = R"(
+    #version 150 core
+    in vec2 position;
+    in vec3 color;
+
+    out vec3 Color;
+
+    void main()
+    {
+        Color = color;
+        gl_Position = vec4(position, 0.0, 1.0);
+    }
+)";
+
+const GLchar* fragmentSource = R"(
+    #version 150 core
+    in vec3 Color;
+    out vec4 outColor;
+
+    void main()
+    {
+        outColor = vec4(Color, 1.0);
+    }
+)";
 
 int main(int argc, char* argv[])
 {
@@ -29,26 +59,67 @@ int main(int argc, char* argv[])
         SDL_WINDOW_FULLSCREEN|SDL_WINDOW_OPENGL);
     SDL_GL_CreateContext(window);
     gladLoadGL();
-    //Open gl code start here
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
+    //Open gl code begins here
 
-    // An array of 3 vectors which represents 3 vertices
-    static const GLfloat g_vertex_buffer_data[] = {
-       -1.0f, -1.0f, 0.0f,
-       1.0f, -1.0f, 0.0f,
-       0.0f,  1.0f, 0.0f,
+    // Create Vertex Array Object
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    // Create a Vertex Buffer Object
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+
+    GLfloat vertices[] = 
+    {
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left, red color
+         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right, green color
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right, blue color
+        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f  // Bottom-left, white color
     };
 
-    // This will identify our vertex buffer
-    GLuint vertexbuffer;
-    // Generate 1 buffer, put the resulting identifier in vertexbuffer
-    glGenBuffers(1, &vertexbuffer);
-    // The following commands will talk about our 'vertexbuffer' buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    // Give our vertices to OpenGL.
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Create an element array
+    GLuint ebo;
+    glGenBuffers(1, &ebo);
+
+    GLuint elements[] = 
+    {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+ 
+    // Create and compile the vertex shader
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexSource, NULL);
+    glCompileShader(vertexShader);
+
+    // Create and compile the fragment shader
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+    glCompileShader(fragmentShader);
+
+    // Link the vertex and fragment shader into a shader program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glBindFragDataLocation(shaderProgram, 0, "outColor");
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    // Specify the layout of the vertex data
+    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
+
+    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
 
     SDL_Event event;
     while (running == true)
@@ -69,27 +140,23 @@ int main(int argc, char* argv[])
                 running = false;
             }
         }
-        // 1st attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(
-            0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-        );
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-        glDisableVertexAttribArray(0);
-        /*
-        glViewport(0, 0, mode.w, mode.h);
-        glClearColor(1.f, 0.f, 1.f, 0.f);
+        // Clear the screen to black
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        */
+        // Draw a rectangle from the 2 triangles using 6 indices
+        //glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         SDL_GL_SwapWindow(window);
     }
+    //Cleanup
+    glDeleteProgram(shaderProgram);
+    glDeleteShader(fragmentShader);
+    glDeleteShader(vertexShader);
+
+    glDeleteBuffers(1, &ebo);
+    glDeleteBuffers(1, &vbo);
+
+    glDeleteVertexArrays(1, &vao);
 
     SDL_Quit();
     return 0;
