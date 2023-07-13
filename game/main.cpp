@@ -2,23 +2,21 @@
 #include <cstdio>
 #include <cstdlib>
 #include <SDL.h>
+#include <SDL_image.h>
 #include <glad/glad.h>
-/*
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-*/
 
 // Shader sources
 const GLchar* vertexSource = R"(
     #version 150 core
     in vec2 position;
     in vec3 color;
-
+    in vec2 texcoord;
     out vec3 Color;
-
+    out vec2 Texcoord;
     void main()
     {
         Color = color;
+        Texcoord = texcoord;
         gl_Position = vec4(position, 0.0, 1.0);
     }
 )";
@@ -26,11 +24,13 @@ const GLchar* vertexSource = R"(
 const GLchar* fragmentSource = R"(
     #version 150 core
     in vec3 Color;
+    in vec2 Texcoord;
     out vec4 outColor;
-
+    uniform sampler2D texKitten;
+    uniform sampler2D texPuppy;
     void main()
     {
-        outColor = vec4(Color, 1.0);
+        outColor = mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);
     }
 )";
 
@@ -55,8 +55,18 @@ int main(int argc, char* argv[])
     printf("Values: %d", mode.w);
     printf(" %d\n", mode.h);
 
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+ 
+    /*
     SDL_Window *window = SDL_CreateWindow("game", 0, 0, mode.w, mode.h, 
-        SDL_WINDOW_FULLSCREEN|SDL_WINDOW_OPENGL);
+        SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
+    */
+    SDL_Window* window = SDL_CreateWindow("game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+    960, 540, SDL_WINDOW_OPENGL);
+
     SDL_GL_CreateContext(window);
     gladLoadGL();
     //Open gl code begins here
@@ -72,10 +82,11 @@ int main(int argc, char* argv[])
 
     GLfloat vertices[] = 
     {
-        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left, red color
-         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right, green color
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right, blue color
-        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f  // Bottom-left, white color
+        //  Position      Color             Texcoords
+       -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+       -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -115,11 +126,48 @@ int main(int argc, char* argv[])
     // Specify the layout of the vertex data
     GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
     glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 0);
 
     GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
     glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 
+        (void*)(2 * sizeof(GLfloat)));
+
+    GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+    glEnableVertexAttribArray(texAttrib);
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 
+        (void*)(5 * sizeof(GLfloat)));
+
+    // Load textures
+    GLuint textures[2];
+    glGenTextures(2, textures);
+
+    int width, height;
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    SDL_Surface* image1 = IMG_Load("sample.png");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image1->w, image1->h, 0, GL_RGBA, 
+        GL_UNSIGNED_BYTE, image1->pixels);
+ 
+    glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    SDL_Surface* image2 = IMG_Load("sample2.png");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image2->w, image2->h, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, image2->pixels);
+    glUniform1i(glGetUniformLocation(shaderProgram, "texPuppy"), 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     SDL_Event event;
     while (running == true)
@@ -144,10 +192,12 @@ int main(int argc, char* argv[])
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         // Draw a rectangle from the 2 triangles using 6 indices
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //SDL Buffer swap
         SDL_GL_SwapWindow(window);
     }
+
+    glDeleteTextures(2, textures);
     //Cleanup
     glDeleteProgram(shaderProgram);
     glDeleteShader(fragmentShader);
