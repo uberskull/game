@@ -1,5 +1,8 @@
 ﻿  glad.c
   main.cpp
-D:\Utveckling\C++\game\game\main.cpp(145,16): warning C4101: 'height': unreferenced local variable
-D:\Utveckling\C++\game\game\main.cpp(145,9): warning C4101: 'width': unreferenced local variable
+D:\Utveckling\C++\game\game\main.cpp(148,16): warning C4101: 'height': unreferenced local variable
+D:\Utveckling\C++\game\game\main.cpp(148,9): warning C4101: 'width': unreferenced local variable
+  mesh.cpp
+D:\Utveckling\C++\game\game\mesh.cpp(21,30): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  Generating Code...
   game.vcxproj -> D:\Utveckling\C++\game\x64\Debug\game.exe

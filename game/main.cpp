@@ -4,9 +4,10 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <glad/glad.h>
+#include "mesh.h"
 
 // Shader sources
-const GLchar* vertexSource = R"(
+const GLchar* vertexShader = R"(
     #version 150 core
     in vec2 position;
     in vec3 color;
@@ -21,7 +22,7 @@ const GLchar* vertexSource = R"(
     }
 )";
 
-const GLchar* fragmentSource = R"(
+const GLchar* fragmentShader = R"(
     #version 150 core
     in vec3 Color;
     in vec2 Texcoord;
@@ -30,7 +31,8 @@ const GLchar* fragmentSource = R"(
     uniform sampler2D texPuppy;
     void main()
     {
-        outColor = mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);
+        outColor = texture(texKitten, Texcoord);
+        //outColor = mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);
     }
 )";
 
@@ -69,7 +71,8 @@ int main(int argc, char* argv[])
 
     SDL_GL_CreateContext(window);
     gladLoadGL();
-    //Open gl code begins here
+
+    mesh *object = new mesh("level1.obj");
 
     // Create Vertex Array Object
     GLuint vao;
@@ -106,19 +109,19 @@ int main(int argc, char* argv[])
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
  
     // Create and compile the vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, NULL);
-    glCompileShader(vertexShader);
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vertexShader, NULL);
+    glCompileShader(vs);
 
     // Create and compile the fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-    glCompileShader(fragmentShader);
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fragmentShader, NULL);
+    glCompileShader(fs);
 
     // Link the vertex and fragment shader into a shader program
     GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
+    glAttachShader(shaderProgram, vs);
+    glAttachShader(shaderProgram, fs);
     glBindFragDataLocation(shaderProgram, 0, "outColor");
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
@@ -147,7 +150,7 @@ int main(int argc, char* argv[])
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textures[0]);
     SDL_Surface* image1 = IMG_Load("sample.png");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image1->w, image1->h, 0, GL_RGBA, 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image1->w, image1->h, 0, GL_RGBA, 
         GL_UNSIGNED_BYTE, image1->pixels);
  
     glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
@@ -160,7 +163,7 @@ int main(int argc, char* argv[])
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textures[1]);
     SDL_Surface* image2 = IMG_Load("sample2.png");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image2->w, image2->h, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image2->w, image2->h, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, image2->pixels);
     glUniform1i(glGetUniformLocation(shaderProgram, "texPuppy"), 1);
 
@@ -200,8 +203,8 @@ int main(int argc, char* argv[])
     glDeleteTextures(2, textures);
     //Cleanup
     glDeleteProgram(shaderProgram);
-    glDeleteShader(fragmentShader);
-    glDeleteShader(vertexShader);
+    glDeleteShader(fs);
+    glDeleteShader(vs);
 
     glDeleteBuffers(1, &ebo);
     glDeleteBuffers(1, &vbo);
