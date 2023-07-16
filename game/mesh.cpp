@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <SDL.h>
 #include "mesh.h"
 
@@ -12,7 +13,7 @@ mesh::mesh(const char filename[])
         char line[200];
         int read = 0;
         int lineCounter = 0;
-        int vCounter = 0;
+        vertexObject *pointer;
 
         memset(objectName, 0, sizeof(objectName));
         memset(line, 0, sizeof(line));
@@ -35,21 +36,16 @@ mesh::mesh(const char filename[])
                     {
                         if (vertices == NULL)
                         {
-                            vertices = (GLfloat*)malloc(sizeof(GLfloat) * 3);
-                            vCounter = 3;
+                            vertices = new vertexObject();
+                            getVertices(&line[2], vertices);
                         }
                         else
                         {
-                            GLfloat* pointer = vertices;
-                            pointer = pointer + vCounter;
-                            pointer = (GLfloat*)malloc(sizeof(GLfloat) * 3);
-                            vCounter = vCounter + 3;
-                        }
-                        //Add vertices
-                        for (int i = 0; i < 3; i++)
-                        {
-
-                            
+                            pointer = vertices;
+                            while (pointer->next != NULL)
+                                pointer = pointer->next;
+                            pointer->next = new vertexObject();
+                            getVertices(&line[2], pointer->next);
                         }
                     }
                     lineCounter = 0;
@@ -61,5 +57,37 @@ mesh::mesh(const char filename[])
         } while (read > 0);
         //Close file handler
         SDL_RWclose(file);
+    }
+}
+
+void mesh::getVertices(char* string, vertexObject* object)
+{
+    char *pointerFirst = string;
+    char *pointerSecond = string;
+    int length;
+    float result;
+ 
+    length = strlen(string);
+
+    for (int i = 0; i < length; i++)
+    {
+        if (*pointerFirst == ' ' || *pointerFirst == '\n')
+        {
+            result = strtof(pointerSecond, &pointerFirst);
+            if (object->x == 0.00)
+                object->x = (GLfloat)result;
+            else
+            {
+                if (object->y == 0.00)
+                    object->y = (GLfloat)strtof(pointerSecond, &pointerFirst);
+                else
+                {
+                    if (object->z == 0.00)
+                        object->z = (GLfloat)strtof(pointerSecond, &pointerFirst);
+                }
+            }
+            pointerSecond = pointerFirst + 1;
+        }
+        pointerFirst++;
     }
 }
