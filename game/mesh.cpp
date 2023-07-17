@@ -1,3 +1,7 @@
+#ifdef _WIN64
+    #define EOL 2
+#endif
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -13,7 +17,8 @@ mesh::mesh(const char filename[])
         char line[200];
         int read = 0;
         int lineCounter = 0;
-        vertexObject *pointer;
+        vertexObject *vPointer;
+        materialObject *mPointer;
 
         memset(objectName, 0, sizeof(objectName));
         memset(line, 0, sizeof(line));
@@ -41,11 +46,30 @@ mesh::mesh(const char filename[])
                         }
                         else
                         {
-                            pointer = vertices;
-                            while (pointer->next != NULL)
-                                pointer = pointer->next;
-                            pointer->next = new vertexObject();
-                            getVertices(&line[2], pointer->next);
+                            vPointer = vertices;
+                            while (vPointer->next != NULL)
+                                vPointer = vPointer->next;
+                            vPointer->next = new vertexObject();
+                            getVertices(&line[2], vPointer->next);
+                        }
+                    }
+                    //Get material information
+                    if (line[0] == 'u' && strstr(line, "usemtl ") != NULL)
+                    {
+                        if (materials == NULL)
+                        {
+                            materials = new materialObject();
+                            strncpy_s(materials->material, sizeof(materials->material), 
+                            &line[7], strlen(line) - 7 - EOL);
+                        }
+                        else
+                        {
+                            mPointer = materials;
+                            while (mPointer->next != NULL)
+                                mPointer = mPointer->next;
+                            mPointer->next = new materialObject();
+                            strncpy_s(mPointer->next->material, sizeof(mPointer->next->material),
+                                &line[7], strlen(line) - 7 - EOL);
                         }
                     }
                     lineCounter = 0;
@@ -64,10 +88,8 @@ void mesh::getVertices(char* string, vertexObject* object)
 {
     char *pointerFirst = string;
     char *pointerSecond = string;
-    int length;
+    int length = strlen(string);
     float result;
- 
-    length = strlen(string);
 
     for (int i = 0; i < length; i++)
     {

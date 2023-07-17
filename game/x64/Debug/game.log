@@ -3,7 +3,7 @@
 D:\Utveckling\C++\game\game\main.cpp(148,16): warning C4101: 'height': unreferenced local variable
 D:\Utveckling\C++\game\game\main.cpp(148,9): warning C4101: 'width': unreferenced local variable
   mesh.cpp
-D:\Utveckling\C++\game\game\mesh.cpp(22,30): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\Utveckling\C++\game\game\mesh.cpp(70,20): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\Utveckling\C++\game\game\mesh.cpp(27,30): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\Utveckling\C++\game\game\mesh.cpp(91,16): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   Generating Code...
   game.vcxproj -> D:\Utveckling\C++\game\x64\Debug\game.exe
