@@ -9,11 +9,17 @@ struct vertexObject
     vertexObject *next;
 };
 
-struct faceObject
+struct subFaceObject
 {
     int v;
     int vt;
     int vn;
+    subFaceObject* next;
+};
+
+struct faceObject
+{
+    subFaceObject* subFaces;
     faceObject *next;
 };
 
@@ -27,10 +33,13 @@ struct materialObject
 class mesh
 {
 public:
-    char objectName[100] = { '\0' };
-    vertexObject *vertices;
-    materialObject *materials;
     //constructor
     mesh(const char filename[]);
     void getVertices(char* string, vertexObject* object);
+    void getFaces(char* string, faceObject* object);
+    void createSubFaceObject(char* string, faceObject* object);
+
+    char objectName[100] = { '\0' };
+    vertexObject* vertices;
+    materialObject *materials;
 };

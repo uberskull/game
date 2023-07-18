@@ -17,14 +17,15 @@ mesh::mesh(const char filename[])
         char line[200];
         int read = 0;
         int lineCounter = 0;
-        vertexObject *vPointer;
-        materialObject *mPointer;
+        vertexObject* vPointer = NULL;
+        materialObject* mPointer = NULL;
+        faceObject* fPointer = NULL;
 
         memset(objectName, 0, sizeof(objectName));
         memset(line, 0, sizeof(line));
         do
         {
-            read = SDL_RWread(file, &line[lineCounter], sizeof(char), 1);
+            read = (int)SDL_RWread(file, &line[lineCounter], sizeof(char), 1);
             if (read > 0)
             {
                 //End of line, parse
@@ -61,6 +62,7 @@ mesh::mesh(const char filename[])
                             materials = new materialObject();
                             strncpy_s(materials->material, sizeof(materials->material), 
                             &line[7], strlen(line) - 7 - EOL);
+                            mPointer = materials;
                         }
                         else
                         {
@@ -68,8 +70,26 @@ mesh::mesh(const char filename[])
                             while (mPointer->next != NULL)
                                 mPointer = mPointer->next;
                             mPointer->next = new materialObject();
-                            strncpy_s(mPointer->next->material, sizeof(mPointer->next->material),
+                            mPointer = mPointer->next;
+                            strncpy_s(mPointer->material, sizeof(mPointer->material),
                                 &line[7], strlen(line) - 7 - EOL);
+                        }
+                    }
+                    //Get faces
+                    if (line[0] == 'f' && strstr(line, "f ") != NULL)
+                    {
+                        if (mPointer->faces == NULL)
+                        {
+                            mPointer->faces = new faceObject();
+                            getFaces(&line[2], mPointer->faces);
+                        }
+                        else
+                        {
+                            fPointer = mPointer->faces;
+                            while (fPointer->next != NULL)
+                                fPointer = fPointer->next;
+                            fPointer->next = new faceObject();
+                            getFaces(&line[2], fPointer->next);
                         }
                     }
                     lineCounter = 0;
@@ -84,20 +104,92 @@ mesh::mesh(const char filename[])
     }
 }
 
+void mesh::getFaces(char* string, faceObject* object)
+{
+    char* token;
+    char* nextToken;
+
+    token = strtok_s(string, " ", &nextToken);
+    if(token != NULL)
+        createSubFaceObject(token, object);
+    while (token)
+    {
+        token = strtok_s(NULL, " ", &nextToken);
+        if(token != NULL)
+            createSubFaceObject(token, object);
+    }
+}
+
+void mesh::createSubFaceObject(char* string, faceObject* object)
+{
+    char* token;
+    char* nextToken;
+    subFaceObject* sPointer;
+    int i = 0;
+
+    if (strstr(string, "/") != NULL)
+    {
+        token = strtok_s(string, "/", &nextToken);
+        if (object->subFaces == NULL)
+        {
+            object->subFaces = new subFaceObject();
+            object->subFaces->v = atoi(token);
+            sPointer = object->subFaces;
+        }
+        else
+        {
+            sPointer = object->subFaces;
+            while (sPointer->next != NULL)
+                sPointer = sPointer->next;
+            sPointer->next = new subFaceObject();
+            sPointer->next->v = atoi(token);
+            sPointer = sPointer->next;
+        }
+        while (token)
+        {
+            token = strtok_s(NULL, "/", &nextToken);
+            if (i == 0)
+                sPointer->vt = atoi(token);
+            if (i == 1)
+                sPointer->vn = atoi(token);
+            i++;
+        }
+    }
+    else
+    {
+        token = strtok_s(string, "/", &nextToken);
+        if (object->subFaces == NULL)
+        {
+            object->subFaces = new subFaceObject();
+            object->subFaces->v = atoi(token);
+            object->subFaces->vt = -1;
+            object->subFaces->vn = -1;
+        }
+        else
+        {
+            sPointer = object->subFaces;
+            while (sPointer->next != NULL)
+                sPointer = sPointer->next;
+            sPointer->next = new subFaceObject();
+            sPointer->next->v = atoi(token);
+            sPointer->next->vt = -1;
+            sPointer->next->vn = -1;
+        }
+    }
+}
+
 void mesh::getVertices(char* string, vertexObject* object)
 {
-    char *pointerFirst = string;
-    char *pointerSecond = string;
-    int length = strlen(string);
-    float result;
+    char* pointerFirst = string;
+    char* pointerSecond = string;
+    int length = (int)strlen(string);
 
     for (int i = 0; i < length; i++)
     {
         if (*pointerFirst == ' ' || *pointerFirst == '\n')
         {
-            result = strtof(pointerSecond, &pointerFirst);
             if (object->x == 0.00)
-                object->x = (GLfloat)result;
+                object->x = (GLfloat)strtof(pointerSecond, &pointerFirst);
             else
             {
                 if (object->y == 0.00)
