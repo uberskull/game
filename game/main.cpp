@@ -4,7 +4,11 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <glad/glad.h>
-#include "mesh.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <chrono>
+#include "object3d.h"
 
 // Shader sources
 const GLchar* vertexShader = R"(
@@ -14,11 +18,12 @@ const GLchar* vertexShader = R"(
     in vec2 texcoord;
     out vec3 Color;
     out vec2 Texcoord;
+    uniform mat4 trans;
     void main()
     {
         Color = color;
         Texcoord = texcoord;
-        gl_Position = vec4(position, 0.0, 1.0);
+        gl_Position = trans * vec4(position, 0.0, 1.0);
     }
 )";
 
@@ -38,6 +43,7 @@ const GLchar* fragmentShader = R"(
 
 int main(int argc, char* argv[])
 {
+    auto t_start = std::chrono::high_resolution_clock::now();
     bool running = true;
     SDL_DisplayMode mode;
 
@@ -72,7 +78,7 @@ int main(int argc, char* argv[])
     SDL_GL_CreateContext(window);
     gladLoadGL();
 
-    mesh *object = new mesh("level1.obj");
+    object3d *object = new object3d("level1.obj");
 
     // Create Vertex Array Object
     GLuint vao;
@@ -86,11 +92,12 @@ int main(int argc, char* argv[])
     GLfloat vertices[] = 
     {
         //  Position      Color             Texcoords
-       -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
-        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
-       -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
+            -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+             0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
+             0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+            -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
     };
+
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -172,6 +179,8 @@ int main(int argc, char* argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    GLint uniTrans = glGetUniformLocation(shaderProgram, "trans");
+
     SDL_Event event;
     while (running == true)
     {
@@ -194,6 +203,19 @@ int main(int argc, char* argv[])
         // Clear the screen to black
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Calculate transformation
+        auto t_now = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+
+        glm::mat4 trans = glm::mat4(1.0f);
+        trans = glm::rotate(
+            trans,
+            time * glm::radians(180.0f),
+            glm::vec3(0.0f, 0.0f, 1.0f)
+        );
+        glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+
         // Draw a rectangle from the 2 triangles using 6 indices
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //SDL Buffer swap

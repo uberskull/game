@@ -21,12 +21,12 @@
     <ClCompile Include="..\glad\src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mesh.cpp">
+    <ClCompile Include="object3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="mesh.h">
+    <ClInclude Include="object3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

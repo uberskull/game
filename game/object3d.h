@@ -30,11 +30,11 @@ struct materialObject
     materialObject *next;
 };
 
-class mesh
+class object3d
 {
 public:
     //constructor
-    mesh(const char filename[]);
+    object3d(const char filename[]);
     void getVertices(char* string, vertexObject* object);
     void getFaces(char* string, faceObject* object);
     void createSubFaceObject(char* string, faceObject* object);

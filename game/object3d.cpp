@@ -6,9 +6,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <SDL.h>
-#include "mesh.h"
+#include "object3d.h"
 
-mesh::mesh(const char filename[])
+object3d::object3d(const char filename[])
 {
     //Read file
     SDL_RWops* file = SDL_RWFromFile(filename, "r");
@@ -34,8 +34,8 @@ mesh::mesh(const char filename[])
                     //Object definition starts
                     if (line[0] == 'o')
                     {
-                        line[lineCounter - 1] = '\0';
-                        strcpy_s(objectName, sizeof(objectName), &line[2]);
+                        strncpy_s(objectName, sizeof(objectName), &line[2],
+                            strlen(line) - 2 - EOL);
                     }
                     //Get vertex information
                     if (line[0] == 'v' && strstr(line, "v ") != NULL)
@@ -104,7 +104,7 @@ mesh::mesh(const char filename[])
     }
 }
 
-void mesh::getFaces(char* string, faceObject* object)
+void object3d::getFaces(char* string, faceObject* object)
 {
     char* token;
     char* nextToken;
@@ -120,7 +120,7 @@ void mesh::getFaces(char* string, faceObject* object)
     }
 }
 
-void mesh::createSubFaceObject(char* string, faceObject* object)
+void object3d::createSubFaceObject(char* string, faceObject* object)
 {
     char* token;
     char* nextToken;
@@ -178,7 +178,7 @@ void mesh::createSubFaceObject(char* string, faceObject* object)
     }
 }
 
-void mesh::getVertices(char* string, vertexObject* object)
+void object3d::getVertices(char* string, vertexObject* object)
 {
     char* pointerFirst = string;
     char* pointerSecond = string;
