@@ -1,7 +1,7 @@
 ﻿  glad.c
   main.cpp
-D:\Utveckling\C++\game\game\main.cpp(155,16): warning C4101: 'height': unreferenced local variable
-D:\Utveckling\C++\game\game\main.cpp(155,9): warning C4101: 'width': unreferenced local variable
+D:\Utveckling\C++\game\game\main.cpp(80,21): warning C4101: 'mode': unreferenced local variable
   object3d.cpp
   Generating Code...
+D:\Utveckling\C++\game\game\main.cpp(161): warning C4715: 'SDL_main': not all control paths return a value
   game.vcxproj -> D:\Utveckling\C++\game\x64\Debug\game.exe

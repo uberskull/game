@@ -26,7 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="object3d.h">
+    <ClInclude Include="object3d.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

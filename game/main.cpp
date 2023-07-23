@@ -1,4 +1,166 @@
+#include <cstdio>
+#include <SDL.h>
+#include "object3d.hpp"
 
+// Shader sources
+const GLchar* vertexShader = R"(
+    in vec3 position;
+
+    void main()
+    {
+        gl_Position = vec4(position, 1.0);
+    }
+)";
+
+const GLchar* fragmentShader = R"(
+    
+    void main()
+    {
+
+    }
+)";
+
+void createObjectData(object3d* object, GLfloat* vertices, GLuint* elements)
+{
+    materialObject* mPointer = object->materials;
+    faceObject* fPointer = NULL;
+    subFaceObject* sPointer = NULL;
+
+    vertexObject* vPointer = object->vertices;
+    int numberOfSubFaces = 0;
+
+    GLfloat* flPointer = vertices;
+    GLuint* elPointer = elements;
+    while (vPointer != NULL)
+    {
+        *flPointer = vPointer->x;
+        flPointer++;
+        *flPointer = vPointer->y;
+        flPointer++;
+        *flPointer = vPointer->z;
+        flPointer++;
+        vPointer = vPointer->next;
+    }
+
+    while (mPointer != NULL)
+    {
+        fPointer = mPointer->faces;
+        while (fPointer != NULL)
+        {
+            sPointer = fPointer->subFaces;
+            numberOfSubFaces = object->countSubFaces(sPointer);
+            if (numberOfSubFaces == 4)
+            {
+                for (int c = 0; c < 6; c++)
+                {
+                    //Go back one step
+                    if (c == 3)
+                        sPointer = sPointer->previous;
+                    //Go back to start
+                    if (c == 5)
+                    {
+                        while (sPointer->previous != NULL)
+                            sPointer = sPointer->previous;
+                    }
+                    *elPointer = sPointer->v - 1;
+                    elPointer++;
+                    if(sPointer->next != NULL)
+                        sPointer = sPointer->next;
+                }
+            }
+            fPointer = fPointer->next;
+        }
+        mPointer = mPointer->next;
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    bool running = true;
+    SDL_DisplayMode mode;
+
+    //Init SDL video
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    {
+        printf("Video initialization failed: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    SDL_Window* window = SDL_CreateWindow("game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        960, 540, SDL_WINDOW_OPENGL);
+
+    SDL_GL_CreateContext(window);
+    gladLoadGL();
+
+    object3d* object = new object3d("cube");
+    int verticesLength = object->countVertices() * 3;
+    int elementLength = object->getElementLength();
+    GLfloat* vertices = (GLfloat*)calloc(verticesLength, sizeof(GLfloat));
+    GLuint* elements = (GLuint*)calloc(elementLength, sizeof(GLuint));
+
+    createObjectData(object, vertices, elements);
+
+    // Create Vertex Array Object
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    // Create a Vertex Buffer Object
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, verticesLength, vertices, GL_STATIC_DRAW);
+
+    // Create an element array
+    GLuint ebo;
+    glGenBuffers(1, &ebo);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementLength, elements, GL_STATIC_DRAW);
+
+    // Create and compile the vertex shader
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vertexShader, NULL);
+    glCompileShader(vs);
+
+    // Create and compile the fragment shader
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fragmentShader, NULL);
+    glCompileShader(fs);
+
+    // Link the vertex and fragment shader into a shader program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vs);
+    glAttachShader(shaderProgram, fs);
+    glBindFragDataLocation(shaderProgram, 0, "outColor");
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    // Specify the layout of the vertex data
+    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+
+    /*
+    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+        (void*)(2 * sizeof(GLfloat)));
+
+    GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+    glEnableVertexAttribArray(texAttrib);
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+        (void*)(5 * sizeof(GLfloat)));
+    */
+}
+
+/*
 #include <cstdio>
 #include <cstdlib>
 #include <SDL.h>
@@ -8,7 +170,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <chrono>
-#include "object3d.h"
+#include "object3d.hpp"
 
 // Shader sources
 const GLchar* vertexShader = R"(
@@ -68,17 +230,16 @@ int main(int argc, char* argv[])
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
  
-    /*
-    SDL_Window *window = SDL_CreateWindow("game", 0, 0, mode.w, mode.h, 
-        SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
-    */
+    //SDL_Window *window = SDL_CreateWindow("game", 0, 0, mode.w, mode.h, 
+    //     SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
+
     SDL_Window* window = SDL_CreateWindow("game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
     960, 540, SDL_WINDOW_OPENGL);
 
     SDL_GL_CreateContext(window);
     gladLoadGL();
 
-    object3d *object = new object3d("level1.obj");
+    object3d *object = new object3d("cube");
 
     // Create Vertex Array Object
     GLuint vao;
@@ -236,3 +397,4 @@ int main(int argc, char* argv[])
     SDL_Quit();
     return 0;
 }
+*/

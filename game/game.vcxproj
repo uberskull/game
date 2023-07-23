@@ -139,7 +139,7 @@
     <ClCompile Include="object3d.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="object3d.h" />
+    <ClInclude Include="object3d.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

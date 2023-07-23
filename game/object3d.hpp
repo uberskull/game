@@ -6,7 +6,7 @@ struct vertexObject
     GLfloat x;
     GLfloat y;
     GLfloat z;
-    vertexObject *next;
+    vertexObject* next;
 };
 
 struct subFaceObject
@@ -15,19 +15,20 @@ struct subFaceObject
     int vt;
     int vn;
     subFaceObject* next;
+    subFaceObject* previous;
 };
 
 struct faceObject
 {
     subFaceObject* subFaces;
-    faceObject *next;
+    faceObject* next;
 };
 
 struct materialObject
 {
     char material[100] = { '\0' };
-    faceObject *faces;
-    materialObject *next;
+    faceObject* faces;
+    materialObject* next;
 };
 
 class object3d
@@ -38,8 +39,11 @@ public:
     void getVertices(char* string, vertexObject* object);
     void getFaces(char* string, faceObject* object);
     void createSubFaceObject(char* string, faceObject* object);
+    int getElementLength();
+    int countVertices();
+    int countSubFaces(subFaceObject* subFaces);
 
     char objectName[100] = { '\0' };
     vertexObject* vertices;
-    materialObject *materials;
+    materialObject* materials;
 };

@@ -6,12 +6,15 @@
 #include <cstring>
 #include <cstdlib>
 #include <SDL.h>
-#include "object3d.h"
+#include "object3d.hpp"
 
 object3d::object3d(const char filename[])
 {
+    char realFilename[100] = { '\0' };
+    strcpy_s(realFilename, sizeof(realFilename), filename);
+    strcat_s(realFilename, sizeof(realFilename), ".obj");
     //Read file
-    SDL_RWops* file = SDL_RWFromFile(filename, "r");
+    SDL_RWops* file = SDL_RWFromFile(realFilename, "r");
     if (file != NULL)
     {
         char line[200];
@@ -142,6 +145,7 @@ void object3d::createSubFaceObject(char* string, faceObject* object)
             while (sPointer->next != NULL)
                 sPointer = sPointer->next;
             sPointer->next = new subFaceObject();
+            sPointer->next->previous = sPointer;
             sPointer->next->v = atoi(token);
             sPointer = sPointer->next;
         }
@@ -171,6 +175,7 @@ void object3d::createSubFaceObject(char* string, faceObject* object)
             while (sPointer->next != NULL)
                 sPointer = sPointer->next;
             sPointer->next = new subFaceObject();
+            sPointer->next->previous = sPointer;
             sPointer->next->v = atoi(token);
             sPointer->next->vt = -1;
             sPointer->next->vn = -1;
@@ -204,4 +209,61 @@ void object3d::getVertices(char* string, vertexObject* object)
         }
         pointerFirst++;
     }
+}
+
+int object3d::countVertices()
+{
+    int counter = 0;
+    vertexObject* pointer = vertices;
+
+    while (pointer != NULL)
+    {
+        counter++;
+        pointer = pointer->next;
+    }
+    return counter;
+}
+
+
+int object3d::countSubFaces(subFaceObject *subFaces)
+{
+    subFaceObject* sPointer = subFaces;
+    int subfaceCounter = 0;
+    while (sPointer != NULL)
+    {
+        subfaceCounter++;
+        sPointer = sPointer->next;
+    }
+    return subfaceCounter;
+}
+
+int object3d::getElementLength()
+{
+    int counter = 0;
+    int subfaceCounter = 0;
+    materialObject* mPointer = materials;
+    faceObject* fPointer = NULL;
+    subFaceObject* sPointer = NULL;
+
+    while (mPointer != NULL)
+    {
+        fPointer = mPointer->faces;
+        while (fPointer != NULL)
+        {
+            sPointer = fPointer->subFaces;
+            subfaceCounter = 0;
+            while (sPointer != NULL)
+            {
+                subfaceCounter++;
+                counter++;
+                sPointer = sPointer->next;
+            }
+            if (subfaceCounter == 4)
+                counter += 2;
+            fPointer = fPointer->next;
+        }
+        mPointer = mPointer->next;
+    }
+
+    return counter;
 }
